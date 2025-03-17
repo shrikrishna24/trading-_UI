@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
-import moment from "moment-timezone";
 import jsonData from "../assets/last_5_days_data.json"; // Import JSON file
+import moment from "moment-timezone";
 
 const groupByDay = (data) => {
   const groupedData = {};
@@ -22,6 +22,7 @@ const TradingViewChart = () => {
   const [displayData, setDisplayData] = useState([]);
   const [index, setIndex] = useState(0);
   const chartRef = useRef(null);
+  const [markPoints, setMarkPoints] = useState([]);
 
   useEffect(() => {
     const dayData = groupedData[selectedDay];
@@ -35,45 +36,115 @@ const TradingViewChart = () => {
         close: null,
         RSI: null,
         entry_price: d.entry_price,
-        stop_loss: d.stop_loss,
-        take_profit: d.take_profit,
         signal: d.signal,
       }))
     );
     setIndex(0);
+    setMarkPoints([]); // Reset markers when changing days
   }, [selectedDay]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (index < fullDayData.length) {
+        const newPoint = fullDayData[index];
+
+        // Update displayed data progressively
         setDisplayData((prev) =>
           prev.map((item, i) =>
             i === index
               ? {
-                  ...item,
-                  open: fullDayData[i].open_1m,
-                  high: fullDayData[i].high_1m,
-                  low: fullDayData[i].low_1m,
-                  close: fullDayData[i].close_1m,
-                  RSI: fullDayData[i].RSI_1m,
-                  entry_price: fullDayData[i].entry_price,
-                  stop_loss: fullDayData[i].stop_loss,
-                  take_profit: fullDayData[i].take_profit,
-                  signal: fullDayData[i].signal,
-                }
+                ...item,
+                open: newPoint.open_1m,
+                high: newPoint.high_1m,
+                low: newPoint.low_1m,
+                close: newPoint.close_1m,
+                RSI: newPoint.RSI_1m,
+                entry_price: newPoint.entry_price,
+                signal: newPoint.signal,
+              }
               : item
           )
         );
+        setMarkPoints((prev) => {
+          const lastEntry = prev.length ? prev[prev.length - 1] : null;
+          const lastEntryPrice = lastEntry ? lastEntry.coord[1] : null;
+          const isTradeActive = prev.some((marker) => marker.name === "Entry" && marker.coord[1] === newPoint.entry_price);
+
+          // Only add an Entry marker when a new trade starts, and it hasn't been plotted before
+          if (
+            newPoint.signal !== "HOLD" &&
+            newPoint.signal !== "SQUARE OFF PUT (Stop-Loss Hit)" &&
+            newPoint.entry_price !== lastEntryPrice &&
+            !isTradeActive // Ensure no duplicate entry markers
+          ) {
+            const newMarkers = [
+              {
+                name: "Entry",
+                coord: [moment.utc(newPoint.timestamp).tz("Asia/Kolkata").format("HH:mm:ss"), newPoint.entry_price],
+                value: `Entry\n${newPoint.entry_price}`,
+                symbol: "pin",
+                symbolSize: 20,
+                label: { show: true, position: "top", formatter: `{b}\n{c}` },
+                itemStyle: { color: "green" },
+              },
+            ];
+
+            // Ensure SL appears only once per trade
+            const existingSL = prev.some((marker) => marker.name === "SL" && marker.coord[1] === newPoint.stop_loss);
+            if (newPoint.stop_loss && newPoint.stop_loss !== newPoint.entry_price && !existingSL) {
+              newMarkers.push({
+                name: "SL",
+                coord: [moment.utc(newPoint.timestamp).tz("Asia/Kolkata").format("HH:mm:ss"), newPoint.stop_loss],
+                value: `SL\n${newPoint.stop_loss}`,
+                symbol: "pin",
+                symbolSize: 20,
+                label: { show: true, position: "bottom", formatter: `{b}\n{c}` },
+                itemStyle: { color: "red" },
+              });
+            }
+
+            return [...prev, ...newMarkers];
+          }
+
+          // Only add TP at the point of trade square-off
+          if (
+            (newPoint.signal.includes("SQUARE OFF") || newPoint.signal.includes("EXIT")) && // Check if trade is ending
+            newPoint.take_profit &&
+            newPoint.take_profit !== newPoint.entry_price &&
+            newPoint.take_profit !== newPoint.stop_loss &&
+            !prev.some((marker) => marker.name === "TP" && marker.coord[1] === newPoint.take_profit) // Ensure unique TP
+          ) {
+            return [
+              ...prev,
+              {
+                name: "TP",
+                coord: [moment.utc(newPoint.timestamp).tz("Asia/Kolkata").format("HH:mm:ss"), newPoint.take_profit],
+                value: `TP\n${newPoint.take_profit}`,
+                symbol: "pin",
+                symbolSize: 20,
+                label: { show: true, position: "top", formatter: `{b}\n{c}` },
+                itemStyle: { color: "blue" },
+              },
+            ];
+          }
+
+          return prev;
+        });
+
+        // Move to the next data point in the interval
         setIndex((prev) => prev + 1);
+
+
+
       } else {
         clearInterval(interval);
       }
-    }, 2000);
+    }, 0);
 
     return () => clearInterval(interval);
   }, [index, fullDayData]);
 
-  // Extract OHLC data
+  // Extract OHLC data for candlestick chart
   const ohlcData = displayData.map((d) => [d.open, d.close, d.low, d.high]).filter((candle) => candle[0] !== null);
   const rsiData = displayData.map((d) => d.RSI).filter((RSI) => RSI !== null);
   const timestamps = displayData.map((d) =>
@@ -87,71 +158,6 @@ const TradingViewChart = () => {
   const buffer = 100;
   const yMin = minClose !== Infinity ? minClose - buffer : 0;
   const yMax = maxClose !== -Infinity ? maxClose + buffer : 2000;
-
-  // Generate Clean Mark Points (Entry Price, SL, TP)
-  const markPoints = [];
-
-  let tradeStart = null;
-  let tradeEnd = null;
-
-  displayData.forEach((d, i) => {
-    if (d.signal !== "HOLD") {
-      if (!tradeStart) {
-        tradeStart = { index: i, price: d.entry_price, time: timestamps[i] };
-      }
-      tradeEnd = { index: i, price: d.entry_price, time: timestamps[i] };
-    }
-
-    // SL & TP only at trade entry points
-    if (tradeStart && i === tradeStart.index) {
-      markPoints.push({
-        name: "Entry",
-        coord: [tradeStart.time, tradeStart.price],
-        value: `Entry\n${tradeStart.price}`,
-        symbol: "circle",
-        symbolSize: 10,
-        label: { show: true, position: "top", formatter: `{b}\n{c}` },
-        itemStyle: { color: "green" },
-      });
-
-      if (d.stop_loss) {
-        markPoints.push({
-          name: "SL",
-          coord: [tradeStart.time, d.stop_loss],
-          value: `SL\n${d.stop_loss}`,
-          symbol: "circle",
-          symbolSize: 10,
-          label: { show: true, position: "top", formatter: `{b}\n{c}` },
-          itemStyle: { color: "red" },
-        });
-      }
-
-      if (d.take_profit) {
-        markPoints.push({
-          name: "TP",
-          coord: [tradeStart.time, d.take_profit],
-          value: `TP\n${d.take_profit}`,
-          symbol: "circle",
-          symbolSize: 10,
-          label: { show: true, position: "top", formatter: `{b}\n{c}` },
-          itemStyle: { color: "blue" },
-        });
-      }
-    }
-  });
-
-  // Ensure entry is shown only at start and end
-  if (tradeStart && tradeEnd && tradeStart.index !== tradeEnd.index) {
-    markPoints.push({
-      name: "Exit",
-      coord: [tradeEnd.time, tradeEnd.price],
-      value: `Exit\n${tradeEnd.price}`,
-      symbol: "circle",
-      symbolSize: 10,
-      label: { show: true, position: "top", formatter: `{b}\n{c}` },
-      itemStyle: { color: "green" },
-    });
-  }
 
   const option = {
     title: [
@@ -186,7 +192,7 @@ const TradingViewChart = () => {
         data: ohlcData,
         xAxisIndex: 0,
         yAxisIndex: 0,
-        markPoint: { data: markPoints }, // Add cleaner entry/SL/TP markers
+        markPoint: { data: markPoints }, // Add progressive entry markers
       },
       {
         name: "RSI",
