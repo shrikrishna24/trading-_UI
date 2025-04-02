@@ -1,0 +1,207 @@
+/* Reset and global styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  body {
+    background-color: #f5f7fa;
+    color: #333;
+  }
+  
+  /* Main container */
+  .trading-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0 auto;
+    background-color: #fff;
+  }
+  
+  /* Header */
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: #fff;
+    border-bottom: 1px solid #eaedf2;
+  }
+  
+  .app-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2384ff;
+  }
+  
+  .day-selector {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .day-selector button {
+    background-color: #f5f7fa;
+    border: 1px solid #e0e4e9;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .day-selector button:hover {
+    background-color: #eaf0ff;
+    border-color: #2384ff;
+  }
+  
+  .day-selector button.active {
+    background-color: #2384ff;
+    color: white;
+    border-color: #2384ff;
+  }
+  
+  /* Chart container */
+  .chart-container {
+    position: relative;
+    height: 400px;
+    background-color: #fff;
+    border-bottom: 1px solid #eaedf2;
+    width: 100%;
+  }
+  
+  /* Chart overlay labels */
+  .chart-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  
+  .chart-overlay-label {
+    font-size: 12px;
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  /* Trade summary section */
+  .trade-summary {
+    padding: 20px;
+    border-bottom: 1px solid #eaedf2;
+  }
+  
+  .trade-summary h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2384ff;
+    margin-bottom: 16px;
+  }
+  
+  /* Table styles - matches reference image */
+  .adviosrytable-content {
+    width: 100%;
+    height: 300px;
+    overflow-y: auto;
+    border: none;
+    box-shadow: none;
+  }
+  
+  .adviosrytable {
+    width: 100%;
+    position: relative;
+    border-collapse: collapse;
+  }
+  
+  .adviosrytable th {
+    background-color: #2384ff !important;
+    color: white;
+    font-weight: 600;
+    padding: 14px 16px;
+    font-size: 14px;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    text-align: left;
+  }
+  
+  .adviosrytable td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border: none;
+    border-bottom: 1px solid rgba(159, 157, 157, 0.15);
+    text-align: left;
+  }
+  
+  .adviosrytable tr:nth-child(odd) {
+    background-color: #f9fafc;
+  }
+  
+  .adviosrytable tr:hover {
+    background-color: #f0f4ff;
+  }
+  
+  td[data-label="Points Capture"] {
+    font-weight: 600;
+  }
+
+  .positive {
+    color: #10b981;
+  }
+  
+  .negative {
+    color: #ef4444;
+  }
+  
+  /* Footer */
+  .app-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    background-color: #f5f7fa;
+    border-top: 1px solid #eaedf2;
+    margin-top: auto;
+    color: #64748b;
+    font-size: 14px;
+  }
+  
+  .creator-credits {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .creator-credits span {
+    font-weight: 500;
+    color: #2384ff;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #c0c5cc;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a0a5ac;
+  }

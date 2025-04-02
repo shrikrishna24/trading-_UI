@@ -2,3 +2,15 @@
   height: 100vh;
   width: 100%;
 }
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background-color: #f5f7fa;
+  color: #333;
+}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
-import jsonData from "../assets/last_5_days_data.json"; // Import JSON file
+import jsonData from "../assets/last_5_days_data.json";
 import moment from "moment-timezone";
 import { Table } from "./Table";
+import "./Chart.css"; // Import the new CSS file
 
 const groupByDay = (data) => {
   const groupedData = {};
@@ -24,10 +25,8 @@ const TradingViewChart = () => {
   const [index, setIndex] = useState(0);
   const chartRef = useRef(null);
   const [markPoints, setMarkPoints] = useState([]);
-
   const [exitLogs, setExitLogs] = useState([]);
 
-  
   useEffect(() => {
     const dayData = groupedData[selectedDay];
     setFullDayData(dayData);
@@ -44,7 +43,8 @@ const TradingViewChart = () => {
       }))
     );
     setIndex(0);
-    setMarkPoints([]); // Reset markers when changing days
+    setMarkPoints([]);
+    setExitLogs([]);
   }, [selectedDay]);
 
   useEffect(() => {
@@ -57,15 +57,15 @@ const TradingViewChart = () => {
           prev.map((item, i) =>
             i === index
               ? {
-                ...item,
-                open: newPoint.open_1m,
-                high: newPoint.high_1m,
-                low: newPoint.low_1m,
-                close: newPoint.close_1m,
-                RSI: newPoint.RSI_1m,
-                entry_price: newPoint.entry_price,
-                signal: newPoint.signal,
-              }
+                  ...item,
+                  open: newPoint.open_1m,
+                  high: newPoint.high_1m,
+                  low: newPoint.low_1m,
+                  close: newPoint.close_1m,
+                  RSI: newPoint.RSI_1m,
+                  entry_price: newPoint.entry_price,
+                  signal: newPoint.signal,
+                }
               : item
           )
         );
@@ -153,9 +153,6 @@ const TradingViewChart = () => {
 
         // Move to the next data point in the interval
         setIndex((prev) => prev + 1);
-
-
-
       } else {
         clearInterval(interval);
       }
@@ -180,30 +177,83 @@ const TradingViewChart = () => {
   const yMax = maxClose !== -Infinity ? maxClose + buffer : 2000;
 
   const option = {
+    backgroundColor: '#ffffff',
     title: [
-      { right: "8%", text: "Price Chart" },
-      { top: "62%", right: "10%", text: "RSI" },
+      { right: "8%", text: "Price Chart", textStyle: { color: '#2384ff', fontWeight: 'bold' } },
+      { top: "62%", right: "10%", text: "RSI", textStyle: { color: '#2384ff', fontWeight: 'bold' } },
     ],
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "cross" },
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e0e4e9',
+      borderWidth: 1,
+      textStyle: { color: '#333' },
     },
-    legend: { data: ["Candlestick", "RSI"] },
+    legend: { 
+      data: ["Candlestick", "RSI"],
+      textStyle: { color: '#555' },
+      itemStyle: { borderWidth: 0 },
+    },
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1], start: 0, end: 100 },
-      { type: "slider", xAxisIndex: [0, 1], start: 0, end: 100 },
+      { 
+        type: "slider", 
+        xAxisIndex: [0, 1], 
+        start: 0, 
+        end: 100,
+        handleIcon: 'path://M-9.1,40.9C-9.1,40.9-8.9,40.9-8.9,40.9z M-3.6,15.6V70.9 M-3.6,70.9L-3.6,15.6z',
+        handleStyle: {
+          color: '#2384ff',
+          borderColor: '#2384ff'
+        },
+        textStyle: { color: '#555' },
+        borderColor: '#e0e4e9',
+        fillerColor: 'rgba(35, 132, 255, 0.1)',
+      },
     ],
     grid: [
-      { bottom: "50%", left: "5%" },
-      { top: "70%", left: "5%" },
+      { bottom: "50%", left: "5%", right: "5%" },
+      { top: "70%", left: "5%", right: "5%" },
     ],
     xAxis: [
-      { type: "category", data: timestamps, gridIndex: 0 },
-      { type: "category", data: timestamps, gridIndex: 1 },
+      { 
+        type: "category", 
+        data: timestamps, 
+        gridIndex: 0,
+        axisLine: { lineStyle: { color: '#e0e4e9' } },
+        axisLabel: { color: '#555' },
+      },
+      { 
+        type: "category", 
+        data: timestamps, 
+        gridIndex: 1,
+        axisLine: { lineStyle: { color: '#e0e4e9' } },
+        axisLabel: { color: '#555' },
+      },
     ],
     yAxis: [
-      { type: "value", name: "Price", gridIndex: 0, min: yMin, max: yMax, scale: true },
-      { type: "value", name: "RSI", gridIndex: 1, min: 0, max: 100 },
+      { 
+        type: "value", 
+        name: "Price", 
+        gridIndex: 0,
+        min: yMin, 
+        max: yMax,
+        scale: true,
+        axisLine: { lineStyle: { color: '#e0e4e9' } },
+        axisLabel: { color: '#555' },
+        splitLine: { lineStyle: { color: '#f5f7fa' } },
+      },
+      { 
+        type: "value", 
+        name: "RSI", 
+        gridIndex: 1, 
+        min: 0, 
+        max: 100,
+        axisLine: { lineStyle: { color: '#e0e4e9' } },
+        axisLabel: { color: '#555' },
+        splitLine: { lineStyle: { color: '#f5f7fa' } },
+      },
     ],
     series: [
       {
@@ -212,7 +262,16 @@ const TradingViewChart = () => {
         data: ohlcData,
         xAxisIndex: 0,
         yAxisIndex: 0,
-        markPoint: { data: markPoints }, // Add progressive entry markers
+        itemStyle: {
+          color: '#10b981', // green for bullish candles
+          color0: '#ef4444', // red for bearish candles
+          borderColor: '#10b981',
+          borderColor0: '#ef4444',
+        },
+        markPoint: { 
+          data: markPoints,
+          animationDuration: 300,
+        },
       },
       {
         name: "RSI",
@@ -221,8 +280,29 @@ const TradingViewChart = () => {
         xAxisIndex: 1,
         yAxisIndex: 1,
         smooth: true,
-        areaStyle: { opacity: 0.3 },
-        lineStyle: { width: 2, color: "#8884d8" },
+        areaStyle: { 
+          opacity: 0.3,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(131, 144, 250, 0.5)' },
+              { offset: 1, color: 'rgba(131, 144, 250, 0.05)' }
+            ],
+          }
+        },
+        lineStyle: { width: 2, color: '#2384ff' },
+        markLine: {
+          silent: true,
+          lineStyle: {
+            color: '#888',
+            type: 'dashed'
+          },
+         
+        }
       },
     ],
   };
@@ -252,15 +332,48 @@ const TradingViewChart = () => {
       name: 'Points Capture',
       key: 'pc',
     },
-    
-  ] 
+  ];
 
   return (
-  <>
-  <ReactECharts ref={chartRef} option={option} style={{ height: "100vh", width: "100%" }} />
-    {exitLogs.length>0 && <Table columns={columns} data={exitLogs}/>}
-  </>
-  )
+    <div className="trading-app">
+      <header className="app-header">
+        <h1 className="app-title">Trading Analytics Dashboard</h1>
+        <div className="day-selector">
+          {days.map((day) => (
+            <button
+              key={day}
+              className={selectedDay === day ? 'active' : ''}
+              onClick={() => setSelectedDay(day)}
+            >
+              {moment(day).format('DD MMM YYYY')}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="chart-container">
+    
+        <ReactECharts 
+          ref={chartRef} 
+          option={option} 
+          style={{ height: "100%", width: "100%" }} 
+          notMerge={true}
+          opts={{ renderer: 'canvas' }}
+        />
+      </div>
+
+        <div className="trade-summary">
+          <h2>Trade Summary</h2>
+          {exitLogs.length > 0 && (<Table columns={columns} data={exitLogs} />)}
+        </div>
+
+      <footer className="app-footer">
+        <div className="creator-credits">
+          Created by <span>Darshan Waghela</span> and <span>Shrikrishna Vishwakarma</span>
+        </div>
+      </footer>
+    </div>
+  );
 };
 
 export default TradingViewChart;
