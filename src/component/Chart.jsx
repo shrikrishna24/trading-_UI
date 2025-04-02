@@ -157,7 +157,7 @@ const TradingViewChart = () => {
       } else {
         clearInterval(interval);
       }
-    }, 0);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [index, fullDayData]);
@@ -335,7 +335,7 @@ const TradingViewChart = () => {
   return (
     <div className="trading-app">
       <header className="app-header">
-        <h1 className="app-title">Trading Analytics Dashboard</h1>
+        <h1 className="app-title">Trading Analytics</h1>
         <div className="day-selector">
           {days.map((day) => (
             <Button key={day} btnClass={selectedDay === day ? 'active' : ''} click={() => setSelectedDay(day)} btnText={moment(day).format('DD MMM YYYY')} />
