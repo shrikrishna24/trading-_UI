@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import jsonData from "../assets/last_5_days_data.json"; // Import JSON file
 import moment from "moment-timezone";
+import { Table } from "./Table";
 
 const groupByDay = (data) => {
   const groupedData = {};
@@ -24,6 +25,9 @@ const TradingViewChart = () => {
   const chartRef = useRef(null);
   const [markPoints, setMarkPoints] = useState([]);
 
+  const [exitLogs, setExitLogs] = useState([]);
+
+  
   useEffect(() => {
     const dayData = groupedData[selectedDay];
     setFullDayData(dayData);
@@ -106,28 +110,44 @@ const TradingViewChart = () => {
             return [...prev, ...newMarkers];
           }
 
-          // Only add TP at the point of trade square-off
           if (
-            (newPoint.signal.includes("SQUARE OFF") || newPoint.signal.includes("EXIT")) && // Check if trade is ending
-            newPoint.take_profit &&
-            newPoint.take_profit !== newPoint.entry_price &&
-            newPoint.take_profit !== newPoint.stop_loss &&
-            !prev.some((marker) => marker.name === "TP" && marker.coord[1] === newPoint.take_profit) // Ensure unique TP
+            (newPoint.signal.includes("SQUARE OFF") || newPoint.signal.includes("EXIT")) &&
+            newPoint.entry_price &&
+            newPoint.signal
           ) {
-            return [
-              ...prev,
-              {
-                name: "TP",
-                coord: [moment.utc(newPoint.timestamp).tz("Asia/Kolkata").format("HH:mm:ss"), newPoint.take_profit],
-                value: `TP\n${newPoint.take_profit}`,
-                symbol: "pin",
-                symbolSize: 20,
-                label: { show: true, position: "top", formatter: `{b}\n{c}` },
-                itemStyle: { color: "blue" },
-              },
-            ];
+            setExitLogs((prevLogs) => {
+              const timestamp = moment.utc(newPoint.timestamp).tz("Asia/Kolkata").format("HH:mm:ss");
+              const alreadyLogged = prevLogs.some(
+                (log) =>
+                  log.entry_price === newPoint.entry_price &&
+                  log.timestamp === timestamp
+              );
+          
+              if (alreadyLogged) return prevLogs;
+          
+              const exit_price = newPoint.close_1m;
+              const pc = parseFloat((exit_price - newPoint.entry_price).toFixed(2));
+              const trade_type = newPoint.signal.includes("CALL")
+                ? "CALL"
+                : newPoint.signal.includes("PUT")
+                ? "PUT"
+                : "UNKNOWN";
+          
+              return [
+                ...prevLogs,
+                {
+                  timestamp,
+                  entry_price: newPoint.entry_price,
+                  stop_loss: newPoint.stop_loss || null,
+                  exit_price,
+                  trade_type,
+                  signal: newPoint.signal,
+                  pc,
+                },
+              ];
+            });
           }
-
+          
           return prev;
         });
 
@@ -143,7 +163,7 @@ const TradingViewChart = () => {
 
     return () => clearInterval(interval);
   }, [index, fullDayData]);
-
+  
   // Extract OHLC data for candlestick chart
   const ohlcData = displayData.map((d) => [d.open, d.close, d.low, d.high]).filter((candle) => candle[0] !== null);
   const rsiData = displayData.map((d) => d.RSI).filter((RSI) => RSI !== null);
@@ -207,7 +227,40 @@ const TradingViewChart = () => {
     ],
   };
 
-  return <ReactECharts ref={chartRef} option={option} style={{ height: "100vh", width: "100%" }} />;
+  const columns = [
+    {
+      name: 'Time',
+      key: 'timestamp',
+    },
+    {
+      name: 'Entry Price',
+      key: 'entry_price',
+    },
+    {
+      name: 'Stop Loss',
+      key: 'stop_loss',
+    },
+    {
+      name: 'Trade Type',
+      key: 'trade_type',
+    },
+    {
+      name: 'Signal',
+      key: 'signal',
+    },
+    {
+      name: 'Points Capture',
+      key: 'pc',
+    },
+    
+  ] 
+
+  return (
+  <>
+  <ReactECharts ref={chartRef} option={option} style={{ height: "100vh", width: "100%" }} />
+    {exitLogs.length>0 && <Table columns={columns} data={exitLogs}/>}
+  </>
+  )
 };
 
 export default TradingViewChart;
