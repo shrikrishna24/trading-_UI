@@ -4,6 +4,7 @@ import jsonData from "../assets/last_5_days_data.json";
 import moment from "moment-timezone";
 import { Table } from "./Table";
 import "./Chart.css"; // Import the new CSS file
+import Button from "./Button";
 
 const groupByDay = (data) => {
   const groupedData = {};
@@ -26,7 +27,7 @@ const TradingViewChart = () => {
   const chartRef = useRef(null);
   const [markPoints, setMarkPoints] = useState([]);
   const [exitLogs, setExitLogs] = useState([]);
-
+  const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
     const dayData = groupedData[selectedDay];
     setFullDayData(dayData);
@@ -57,15 +58,15 @@ const TradingViewChart = () => {
           prev.map((item, i) =>
             i === index
               ? {
-                  ...item,
-                  open: newPoint.open_1m,
-                  high: newPoint.high_1m,
-                  low: newPoint.low_1m,
-                  close: newPoint.close_1m,
-                  RSI: newPoint.RSI_1m,
-                  entry_price: newPoint.entry_price,
-                  signal: newPoint.signal,
-                }
+                ...item,
+                open: newPoint.open_1m,
+                high: newPoint.high_1m,
+                low: newPoint.low_1m,
+                close: newPoint.close_1m,
+                RSI: newPoint.RSI_1m,
+                entry_price: newPoint.entry_price,
+                signal: newPoint.signal,
+              }
               : item
           )
         );
@@ -122,17 +123,17 @@ const TradingViewChart = () => {
                   log.entry_price === newPoint.entry_price &&
                   log.timestamp === timestamp
               );
-          
+
               if (alreadyLogged) return prevLogs;
-          
+
               const exit_price = newPoint.close_1m;
               const pc = parseFloat((exit_price - newPoint.entry_price).toFixed(2));
               const trade_type = newPoint.signal.includes("CALL")
                 ? "CALL"
                 : newPoint.signal.includes("PUT")
-                ? "PUT"
-                : "UNKNOWN";
-          
+                  ? "PUT"
+                  : "UNKNOWN";
+
               return [
                 ...prevLogs,
                 {
@@ -147,7 +148,7 @@ const TradingViewChart = () => {
               ];
             });
           }
-          
+
           return prev;
         });
 
@@ -160,13 +161,11 @@ const TradingViewChart = () => {
 
     return () => clearInterval(interval);
   }, [index, fullDayData]);
-  
+
   // Extract OHLC data for candlestick chart
   const ohlcData = displayData.map((d) => [d.open, d.close, d.low, d.high]).filter((candle) => candle[0] !== null);
   const rsiData = displayData.map((d) => d.RSI).filter((RSI) => RSI !== null);
-  const timestamps = displayData.map((d) =>
-    moment.utc(d.timestamp).tz("Asia/Kolkata").format("HH:mm:ss")
-  );
+  const timestamps = displayData.map((d) => moment.utc(d.timestamp).tz("Asia/Kolkata").format("HH:mm:ss"));
 
   // Calculate min/max for Close Price with a 100-point buffer
   const closePrices = displayData.map((d) => d.close).filter((val) => val !== null);
@@ -179,8 +178,8 @@ const TradingViewChart = () => {
   const option = {
     backgroundColor: '#ffffff',
     title: [
-      { right: "8%", text: "Price Chart", textStyle: { color: '#2384ff', fontWeight: 'bold' } },
-      { top: "62%", right: "10%", text: "RSI", textStyle: { color: '#2384ff', fontWeight: 'bold' } },
+      { right: "1%", text: "Price Chart", textStyle: { color: '#2384ff', fontWeight: 'bold' } },
+      { top: "62%", right: "2%", text: "RSI", textStyle: { color: '#2384ff', fontWeight: 'bold' } },
     ],
     tooltip: {
       trigger: "axis",
@@ -190,19 +189,18 @@ const TradingViewChart = () => {
       borderWidth: 1,
       textStyle: { color: '#333' },
     },
-    legend: { 
+    legend: {
       data: ["Candlestick", "RSI"],
       textStyle: { color: '#555' },
       itemStyle: { borderWidth: 0 },
     },
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1], start: 0, end: 100 },
-      { 
-        type: "slider", 
-        xAxisIndex: [0, 1], 
-        start: 0, 
+      {
+        type: "slider",
+        xAxisIndex: [0, 1],
+        start: 0,
         end: 100,
-        handleIcon: 'path://M-9.1,40.9C-9.1,40.9-8.9,40.9-8.9,40.9z M-3.6,15.6V70.9 M-3.6,70.9L-3.6,15.6z',
         handleStyle: {
           color: '#2384ff',
           borderColor: '#2384ff'
@@ -217,38 +215,38 @@ const TradingViewChart = () => {
       { top: "70%", left: "5%", right: "5%" },
     ],
     xAxis: [
-      { 
-        type: "category", 
-        data: timestamps, 
+      {
+        type: "category",
+        data: timestamps,
         gridIndex: 0,
         axisLine: { lineStyle: { color: '#e0e4e9' } },
         axisLabel: { color: '#555' },
       },
-      { 
-        type: "category", 
-        data: timestamps, 
+      {
+        type: "category",
+        data: timestamps,
         gridIndex: 1,
         axisLine: { lineStyle: { color: '#e0e4e9' } },
         axisLabel: { color: '#555' },
       },
     ],
     yAxis: [
-      { 
-        type: "value", 
-        name: "Price", 
+      {
+        type: "value",
+        name: "Price",
         gridIndex: 0,
-        min: yMin, 
+        min: yMin,
         max: yMax,
         scale: true,
         axisLine: { lineStyle: { color: '#e0e4e9' } },
         axisLabel: { color: '#555' },
         splitLine: { lineStyle: { color: '#f5f7fa' } },
       },
-      { 
-        type: "value", 
-        name: "RSI", 
-        gridIndex: 1, 
-        min: 0, 
+      {
+        type: "value",
+        name: "RSI",
+        gridIndex: 1,
+        min: 0,
         max: 100,
         axisLine: { lineStyle: { color: '#e0e4e9' } },
         axisLabel: { color: '#555' },
@@ -268,7 +266,7 @@ const TradingViewChart = () => {
           borderColor: '#10b981',
           borderColor0: '#ef4444',
         },
-        markPoint: { 
+        markPoint: {
           data: markPoints,
           animationDuration: 300,
         },
@@ -280,7 +278,7 @@ const TradingViewChart = () => {
         xAxisIndex: 1,
         yAxisIndex: 1,
         smooth: true,
-        areaStyle: { 
+        areaStyle: {
           opacity: 0.3,
           color: {
             type: 'linear',
@@ -301,7 +299,7 @@ const TradingViewChart = () => {
             color: '#888',
             type: 'dashed'
           },
-         
+
         }
       },
     ],
@@ -340,37 +338,29 @@ const TradingViewChart = () => {
         <h1 className="app-title">Trading Analytics Dashboard</h1>
         <div className="day-selector">
           {days.map((day) => (
-            <button
-              key={day}
-              className={selectedDay === day ? 'active' : ''}
-              onClick={() => setSelectedDay(day)}
-            >
-              {moment(day).format('DD MMM YYYY')}
-            </button>
+            <Button key={day} btnClass={selectedDay === day ? 'active' : ''} click={() => setSelectedDay(day)} btnText={moment(day).format('DD MMM YYYY')} />
           ))}
         </div>
+
+        <Button click={() => setIsFullscreen(!isFullscreen)} btnText={isFullscreen ? "Exit Fullscreen" : "Fullscreen Chart"} />
       </header>
 
-      <div className="chart-container">
-    
-        <ReactECharts 
-          ref={chartRef} 
-          option={option} 
-          style={{ height: "100%", width: "100%" }} 
-          notMerge={true}
-          opts={{ renderer: 'canvas' }}
-        />
+      <div className="chart-container" style={{ height: isFullscreen ? "80vh" : "600px", zIndex: isFullscreen ? 9999 : 1, background: "#fff" }}
+      >
+        <ReactECharts ref={chartRef} option={option} style={{ height: "100%", width: "100%" }} />
       </div>
 
+      {!isFullscreen && (
         <div className="trade-summary">
           <h2>Trade Summary</h2>
-          {exitLogs.length > 0 && (<Table columns={columns} data={exitLogs} />)}
+          {exitLogs.length > 0 && <Table columns={columns} data={exitLogs} />}
         </div>
+      )}
 
       <footer className="app-footer">
-        <div className="creator-credits">
+        <p className="creator-credits">
           Created by <span>Darshan Waghela</span> and <span>Shrikrishna Vishwakarma</span>
-        </div>
+        </p>
       </footer>
     </div>
   );

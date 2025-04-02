@@ -42,28 +42,6 @@
     gap: 10px;
   }
   
-  .day-selector button {
-    background-color: #f5f7fa;
-    border: 1px solid #e0e4e9;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .day-selector button:hover {
-    background-color: #eaf0ff;
-    border-color: #2384ff;
-  }
-  
-  .day-selector button.active {
-    background-color: #2384ff;
-    color: white;
-    border-color: #2384ff;
-  }
-  
   /* Chart container */
   .chart-container {
     position: relative;

@@ -1,17 +1,5 @@
 /* Additional specific styles for the Table component */
-.trade-summary {
-    margin-bottom: 20px;
-  }
-  
-  .trade-summary h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #2384ff;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #eaedf2;
-  }
-  
+
   /* Loading indicator */
   .loading-overlay {
     position: absolute;
